@@ -68,6 +68,26 @@ def give_back(rental_id):
     query("UPDATE cars SET available=TRUE WHERE id=%s", (rows[0][0],))
     return jsonify({"message": "voiture rendue"})
 
+PAGE = """<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Location Voiture</title>
+<style>body{font-family:sans-serif;max-width:720px;margin:40px auto}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ccc;padding:8px;text-align:left}input{margin:4px}</style></head><body>
+<h1>Agence de location de voitures</h1>
+<h3>Ajouter une voiture</h3>
+<input id="brand" placeholder="Marque"><input id="model" placeholder="Modèle"><input id="price" type="number" placeholder="Prix par jour">
+<button onclick="addCar()">Ajouter</button>
+<h3>Voitures</h3>
+<table><thead><tr><th>ID</th><th>Marque</th><th>Modèle</th><th>Prix/jour</th><th>Disponible</th><th></th></tr></thead><tbody id="cars"></tbody></table>
+<script>
+async function load(){const r=await fetch('/cars');const cars=await r.json();
+document.getElementById('cars').innerHTML=cars.map(c=>'<tr><td>'+c.id+'</td><td>'+c.brand+'</td><td>'+c.model+'</td><td>'+c.price_per_day+'</td><td>'+(c.available?'Oui':'Non')+'</td><td>'+(c.available?'<button onclick="rent('+c.id+')">Louer</button>':'')+'</td></tr>').join('');}
+async function addCar(){await fetch('/cars',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({brand:brand.value,model:model.value,price_per_day:Number(price.value)})});load();}
+async function rent(id){const n=prompt('Nom du client ?');if(!n)return;await fetch('/rentals',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({car_id:id,customer:n})});load();}
+load();
+</script></body></html>"""
+
+@app.route("/")
+def home():
+    return PAGE
+
 if __name__ == "__main__":
     init_db()
     app.run(host="0.0.0.0", port=3000)
